@@ -10,22 +10,23 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import com.sgvdev.connectionobserver.ui.theme.ConnectionObserverTheme
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var connectionObserver: ConnectionObserver
+    private lateinit var status: ConnectionObserver.Status
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        connectionObserver = NetworkConnectionObserver(applicationContext)
+        observeConnection()
+
         setContent {
             ConnectionObserverTheme {
-
-                val status by connectionObserver.observe()
-                    .collectAsState(initial = ConnectionObserver.Status.UNAVAILABLE)
-
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -36,5 +37,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun observeConnection() {
+        connectionObserver = NetworkConnectionObserver(applicationContext)
+        connectionObserver.observe().onEach {
+            status = it
+        }.launchIn(lifecycleScope)
     }
 }
